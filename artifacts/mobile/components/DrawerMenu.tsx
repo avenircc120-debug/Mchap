@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -14,24 +16,36 @@ import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 
 const SCREEN_W = Dimensions.get('window').width;
-const DRAWER_W = Math.min(SCREEN_W * 0.75, 300);
-
-type Section = 'youtube' | 'adsense' | 'domain';
+const DRAWER_W = Math.min(SCREEN_W * 0.78, 310);
 
 interface DrawerMenuProps {
   visible: boolean;
   onClose: () => void;
-  onSelectSection: (section: Section) => void;
-  onNewProject?: () => void;
+  onGoHome?: () => void;       // Retour à la liste des projets
+  onNewProject?: () => void;   // Créer un nouveau projet
+  onSettings?: () => void;     // Paramètres généraux
+  onLogout?: () => void;       // Déconnexion
+  userEmail?: string;          // E-mail affiché dans le profil
 }
 
-const SECTION_ITEMS: { section: Section; icon: React.ComponentProps<typeof Feather>['name']; label: string }[] = [
-  { section: 'youtube', icon: 'youtube', label: 'Lien YouTube' },
-  { section: 'adsense', icon: 'dollar-sign', label: 'Google AdSense' },
-  { section: 'domain', icon: 'globe', label: 'Nom de domaine' },
-];
+type NavItem = {
+  id: string;
+  icon: React.ComponentProps<typeof Feather>['name'];
+  label: string;
+  sublabel?: string;
+  onPress: () => void;
+  variant?: 'default' | 'danger';
+};
 
-export default function DrawerMenu({ visible, onClose, onSelectSection, onNewProject }: DrawerMenuProps) {
+export default function DrawerMenu({
+  visible,
+  onClose,
+  onGoHome,
+  onNewProject,
+  onSettings,
+  onLogout,
+  userEmail,
+}: DrawerMenuProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_W)).current;
@@ -73,6 +87,62 @@ export default function DrawerMenu({ visible, onClose, onSelectSection, onNewPro
   const topPad = Platform.OS === 'web' ? 0 : insets.top;
   const bottomPad = Platform.OS === 'web' ? 24 : insets.bottom;
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Déconnexion',
+          style: 'destructive',
+          onPress: () => {
+            onClose();
+            onLogout?.();
+          },
+        },
+      ],
+    );
+  };
+
+  const handleContact = () => {
+    Linking.openURL('mailto:support@mchap.app?subject=Support%20Mchap');
+  };
+
+  const mainItems: NavItem[] = [
+    {
+      id: 'home',
+      icon: 'grid',
+      label: 'Mes projets',
+      sublabel: 'Voir tous vos mini-sites',
+      onPress: () => { onClose(); onGoHome?.(); },
+    },
+    {
+      id: 'new',
+      icon: 'plus-circle',
+      label: 'Nouveau projet',
+      sublabel: 'Créer un mini-site',
+      onPress: () => { onClose(); onNewProject?.(); },
+    },
+  ];
+
+  const accountItems: NavItem[] = [
+    {
+      id: 'settings',
+      icon: 'settings',
+      label: 'Paramètres',
+      sublabel: 'Configuration du compte',
+      onPress: () => { onClose(); onSettings?.(); },
+    },
+    {
+      id: 'support',
+      icon: 'help-circle',
+      label: 'Aide & Support',
+      sublabel: 'Contacter l'assistance',
+      onPress: () => { onClose(); handleContact(); },
+    },
+  ];
+
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
       {/* Backdrop */}
@@ -89,15 +159,15 @@ export default function DrawerMenu({ visible, onClose, onSelectSection, onNewPro
           styles.drawer,
           {
             width: DRAWER_W,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: colors.background,
             transform: [{ translateX }],
-            paddingTop: topPad + 16,
+            paddingTop: topPad + 12,
             paddingBottom: bottomPad + 20,
             borderRightColor: colors.border,
           },
         ]}
       >
-        {/* Close button */}
+        {/* Close */}
         <TouchableOpacity
           style={[styles.closeBtn, { backgroundColor: colors.muted }]}
           onPress={onClose}
@@ -106,62 +176,80 @@ export default function DrawerMenu({ visible, onClose, onSelectSection, onNewPro
           <Feather name="x" size={18} color={colors.foreground} />
         </TouchableOpacity>
 
-        {/* App title */}
-        <View style={styles.brandRow}>
-          <View style={[styles.brandDot, { backgroundColor: colors.primary }]} />
-          <Text style={[styles.brandName, { color: colors.foreground }]}>Mchap</Text>
+        {/* ── Profil utilisateur ── */}
+        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+            <Feather name="user" size={20} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.profileName, { color: colors.foreground }]} numberOfLines={1}>
+              Mon Compte
+            </Text>
+            <Text style={[styles.profileEmail, { color: colors.mutedForeground }]} numberOfLines={1}>
+              {userEmail || 'Aucun compte connecté'}
+            </Text>
+          </View>
+          <Feather name="edit-2" size={14} color={colors.mutedForeground} />
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        {/* Section nav items */}
-        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-          CONFIGURATION
-        </Text>
-        <View style={styles.navItems}>
-          {SECTION_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.section}
-              style={styles.navItem}
-              onPress={() => onSelectSection(item.section)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.navIcon, { backgroundColor: colors.secondary }]}>
-                <Feather name={item.icon} size={18} color={colors.primary} />
-              </View>
-              <Text style={[styles.navLabel, { color: colors.foreground }]}>{item.label}</Text>
-              <Feather
-                name="chevron-right"
-                size={16}
-                color={colors.mutedForeground}
-                style={styles.navChevron}
-              />
-            </TouchableOpacity>
+        {/* ── Navigation principale ── */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>NAVIGATION</Text>
+        <View style={styles.navGroup}>
+          {mainItems.map((item) => (
+            <NavRow key={item.id} item={item} colors={colors} />
           ))}
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 8 }]} />
 
-        {/* New project */}
-        {onNewProject && (
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => {
-              onClose();
-              onNewProject();
-            }}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.navIcon, { backgroundColor: colors.muted }]}>
-              <Feather name="plus-circle" size={18} color={colors.mutedForeground} />
-            </View>
-            <Text style={[styles.navLabel, { color: colors.mutedForeground }]}>
-              Nouveau projet
-            </Text>
-          </TouchableOpacity>
-        )}
+        {/* ── Compte & Support ── */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>COMPTE</Text>
+        <View style={styles.navGroup}>
+          {accountItems.map((item) => (
+            <NavRow key={item.id} item={item} colors={colors} />
+          ))}
+        </View>
+
+        {/* ── Spacer ── */}
+        <View style={{ flex: 1 }} />
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        {/* ── Déconnexion ── */}
+        <TouchableOpacity
+          style={[styles.logoutBtn, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Feather name="log-out" size={18} color="#EF4444" />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>Déconnexion</Text>
+        </TouchableOpacity>
       </Animated.View>
     </View>
+  );
+}
+
+// ── Sub-component ──
+function NavRow({ item, colors }: { item: NavItem; colors: ReturnType<typeof useColors> }) {
+  return (
+    <TouchableOpacity
+      style={[styles.navItem, { backgroundColor: 'transparent' }]}
+      onPress={item.onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.navIcon, { backgroundColor: colors.secondary }]}>
+        <Feather name={item.icon} size={18} color={colors.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.navLabel, { color: colors.foreground }]}>{item.label}</Text>
+        {item.sublabel ? (
+          <Text style={[styles.navSublabel, { color: colors.mutedForeground }]}>{item.sublabel}</Text>
+        ) : null}
+      </View>
+      <Feather name="chevron-right" size={16} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
+    </TouchableOpacity>
   );
 }
 
@@ -190,47 +278,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-end',
+    marginBottom: 12,
   },
-  brandRow: {
+  profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
     marginBottom: 16,
-    paddingHorizontal: 4,
   },
-  brandDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  brandName: {
-    fontSize: 18,
+  profileName: {
+    fontSize: 14,
     fontWeight: '700',
     fontFamily: 'Inter_700Bold',
-    letterSpacing: 0.3,
+  },
+  profileEmail: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 1,
   },
   divider: {
     height: 1,
-    marginVertical: 8,
+    marginVertical: 12,
   },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     letterSpacing: 1.2,
-    marginTop: 12,
-    marginBottom: 4,
+    marginBottom: 6,
     paddingHorizontal: 4,
   },
-  navItems: {
+  navGroup: {
     gap: 2,
   },
   navItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 14,
+    paddingVertical: 11,
     paddingHorizontal: 8,
     borderRadius: 12,
   },
@@ -242,12 +337,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navLabel: {
-    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
   },
-  navChevron: {
-    opacity: 0.5,
+  navSublabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 1,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: 12,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
   },
 });

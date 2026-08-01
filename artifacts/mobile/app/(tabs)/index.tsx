@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { useSiteConfig } from '@/context/SiteConfigContext';
+import { useSiteConfig, type Project } from '@/context/SiteConfigContext';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -20,6 +20,151 @@ import DrawerMenu from '@/components/DrawerMenu';
 import PublishModal, { type PublishState } from '@/components/PublishModal';
 
 type Section = 'youtube' | 'adsense' | 'domain';
+
+// ─── Project List Screen (home when projects exist) ─────────────────────────
+function ProjectListScreen({
+  projects,
+  onOpen,
+  onNew,
+  colors,
+  topPad,
+  bottomPad,
+}: {
+  projects: Project[];
+  onOpen: (id: string) => void;
+  onNew: () => void;
+  colors: ReturnType<typeof useColors>;
+  topPad: number;
+  bottomPad: number;
+}) {
+  const [query, setQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return projects;
+    return projects.filter(
+      (p) =>
+        p.projectName.toLowerCase().includes(q) ||
+        p.subdomainName.toLowerCase().includes(q),
+    );
+  }, [projects, query]);
+
+  const formatDate = (ts: number) => {
+    const d = new Date(ts);
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  return (
+    <View
+      style={[
+        styles.listRoot,
+        { paddingTop: topPad, paddingBottom: bottomPad, backgroundColor: colors.background },
+      ]}
+    >
+      {/* Header brand */}
+      <View style={styles.listHeader}>
+        <View style={[styles.brandLogoCircle, { backgroundColor: colors.primary }]}>
+          <Feather name="globe" size={22} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.brandTitle, { color: colors.foreground, fontSize: 22 }]}>Mchap</Text>
+          <Text style={[styles.brandTagline, { color: colors.mutedForeground, fontSize: 12, textAlign: 'left' }]}>
+            {projects.length} projet{projects.length > 1 ? 's' : ''}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.newBtn, { backgroundColor: colors.primary }]}
+          onPress={onNew}
+          activeOpacity={0.85}
+        >
+          <Feather name="plus" size={18} color="#FFFFFF" />
+          <Text style={styles.newBtnText}>Nouveau</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Search bar */}
+      <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+        <Feather name="search" size={16} color={colors.mutedForeground} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.foreground }]}
+          placeholder="Rechercher un projet…"
+          placeholderTextColor={colors.mutedForeground}
+          value={query}
+          onChangeText={setQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="x" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Project list */}
+      <ScrollView
+        style={styles.listScroll}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {filtered.length === 0 ? (
+          <View style={styles.emptySearch}>
+            <Feather name="inbox" size={32} color={colors.mutedForeground} />
+            <Text style={[styles.emptySearchText, { color: colors.mutedForeground }]}>
+              {query ? 'Aucun projet trouvé' : 'Aucun projet'}
+            </Text>
+          </View>
+        ) : (
+          filtered
+            .slice()
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                style={[styles.projectCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onOpen(project.id);
+                }}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.projectAvatar, { backgroundColor: colors.secondary }]}>
+                  <Feather name="globe" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.projectInfo}>
+                  <Text style={[styles.projectName, { color: colors.foreground }]} numberOfLines={1}>
+                    {project.projectName}
+                  </Text>
+                  <Text style={[styles.projectDomain, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {project.subdomainName ? `${project.subdomainName}.mchap.app` : '.mchap.app'}
+                  </Text>
+                  <Text style={[styles.projectDate, { color: colors.mutedForeground }]}>
+                    Créé le {formatDate(project.createdAt)}
+                  </Text>
+                </View>
+                <View style={styles.projectMeta}>
+                  {project.youtubeUrl ? (
+                    <View style={[styles.metaDot, { backgroundColor: colors.secondary }]}>
+                      <Feather name="youtube" size={11} color={colors.primary} />
+                    </View>
+                  ) : null}
+                  {project.adsenseId ? (
+                    <View style={[styles.metaDot, { backgroundColor: colors.secondary }]}>
+                      <Feather name="dollar-sign" size={11} color={colors.primary} />
+                    </View>
+                  ) : null}
+                  <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                </View>
+              </TouchableOpacity>
+            ))
+        )}
+      </ScrollView>
+    </View>
+  );
+}
 
 // ─── Landing Screen ────────────────────────────────────────────────────────
 function LandingScreen({
@@ -239,7 +384,7 @@ function CreateProjectModal({
 export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { config, setConfig, resetProject } = useSiteConfig();
+  const { config, setConfig, resetProject, projects, activeProjectId, createProject, loadProject } = useSiteConfig();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
@@ -254,7 +399,7 @@ export default function DashboardScreen() {
   };
 
   const handleConfirmCreate = (name: string, subdomain: string) => {
-    setConfig({ projectName: name, subdomainName: subdomain, projectInitialized: true });
+    createProject(name, subdomain);
     setCreateModalOpen(false);
     setActiveSection('youtube');
   };
@@ -298,16 +443,27 @@ export default function DashboardScreen() {
     }
   };
 
-  // ── Landing (project not yet created) ──
-  if (!config.projectInitialized) {
+  // ── No active project: show list (or landing if no projects yet) ──
+  if (!activeProjectId) {
     return (
       <>
-        <LandingScreen
-          onStart={handleStartCreate}
-          colors={colors}
-          topPad={topPad + 16}
-          bottomPad={bottomPad + 16}
-        />
+        {projects.length > 0 ? (
+          <ProjectListScreen
+            projects={projects}
+            onOpen={(id) => loadProject(id)}
+            onNew={handleStartCreate}
+            colors={colors}
+            topPad={topPad + 8}
+            bottomPad={bottomPad + 16}
+          />
+        ) : (
+          <LandingScreen
+            onStart={handleStartCreate}
+            colors={colors}
+            topPad={topPad + 16}
+            bottomPad={bottomPad + 16}
+          />
+        )}
         <CreateProjectModal
           visible={createModalOpen}
           onConfirm={handleConfirmCreate}
@@ -451,11 +607,16 @@ export default function DashboardScreen() {
       <DrawerMenu
         visible={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onSelectSection={(section) => {
-          setActiveSection(section);
+        onGoHome={() => {
+          resetProject();
           setDrawerOpen(false);
         }}
         onNewProject={() => {
+          resetProject();
+          setDrawerOpen(false);
+          setCreateModalOpen(true);
+        }}
+        onLogout={() => {
           resetProject();
         }}
       />
@@ -676,6 +837,112 @@ function SectionDomain({
 }
 
 const styles = StyleSheet.create({
+  // ── Project list ──
+  listRoot: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  newBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  newBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+    color: '#FFFFFF',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    padding: 0,
+  },
+  listScroll: {
+    flex: 1,
+  },
+  listContent: {
+    gap: 10,
+    paddingBottom: 24,
+  },
+  emptySearch: {
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 60,
+    opacity: 0.5,
+  },
+  emptySearchText: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+  },
+  projectCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+  },
+  projectAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  projectInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  projectName: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+  },
+  projectDomain: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+  },
+  projectDate: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 2,
+    opacity: 0.7,
+  },
+  projectMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // ── Landing ──
   landingRoot: {
     flex: 1,
