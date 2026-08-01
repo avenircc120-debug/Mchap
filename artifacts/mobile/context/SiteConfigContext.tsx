@@ -11,6 +11,8 @@ export interface SiteConfig {
   domainType: DomainType;
   subdomainName: string;
   customDomain: string;
+  projectName: string;
+  projectInitialized: boolean;
 }
 
 const defaultConfig: SiteConfig = {
@@ -19,18 +21,22 @@ const defaultConfig: SiteConfig = {
   domainType: 'subdomain',
   subdomainName: '',
   customDomain: '',
+  projectName: '',
+  projectInitialized: false,
 };
 
 interface SiteConfigContextValue {
   config: SiteConfig;
   setConfig: (partial: Partial<SiteConfig>) => void;
   videoId: string | null;
+  resetProject: () => void;
 }
 
 const SiteConfigContext = createContext<SiteConfigContextValue>({
   config: defaultConfig,
   setConfig: () => {},
   videoId: null,
+  resetProject: () => {},
 });
 
 export function extractYouTubeId(url: string): string | null {
@@ -72,10 +78,18 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
+  const resetProject = () => {
+    const fresh = { ...defaultConfig };
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    setConfigState(fresh);
+  };
+
   const videoId = extractYouTubeId(config.youtubeUrl);
 
+  if (!loaded) return null;
+
   return (
-    <SiteConfigContext.Provider value={{ config, setConfig, videoId }}>
+    <SiteConfigContext.Provider value={{ config, setConfig, videoId, resetProject }}>
       {children}
     </SiteConfigContext.Provider>
   );

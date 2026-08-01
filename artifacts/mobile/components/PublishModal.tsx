@@ -39,10 +39,10 @@ export default function PublishModal({ state, onClose }: PublishModalProps) {
             <View style={styles.center}>
               <ActivityIndicator size="large" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.foreground }]}>
-                Déploiement en cours…
+                Mise en ligne en cours…
               </Text>
               <Text style={[styles.loadingSubText, { color: colors.mutedForeground }]}>
-                Publication sur Vercel + GitHub
+                Votre mini-site est en cours de déploiement
               </Text>
             </View>
           )}
@@ -54,6 +54,9 @@ export default function PublishModal({ state, onClose }: PublishModalProps) {
               </View>
               <Text style={[styles.successTitle, { color: colors.foreground }]}>
                 Mini-site publié !
+              </Text>
+              <Text style={[styles.successSubtitle, { color: colors.mutedForeground }]}>
+                Votre site est maintenant en ligne
               </Text>
               <TouchableOpacity
                 style={[styles.urlBox, { backgroundColor: colors.muted, borderColor: colors.border }]}
@@ -68,19 +71,6 @@ export default function PublishModal({ state, onClose }: PublishModalProps) {
                   {state.url}
                 </Text>
               </TouchableOpacity>
-
-              {state.githubUrl && (
-                <TouchableOpacity
-                  style={styles.githubLink}
-                  onPress={() => Linking.openURL(state.githubUrl!)}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="github" size={14} color={colors.mutedForeground} />
-                  <Text style={[styles.githubText, { color: colors.mutedForeground }]}>
-                    Voir le commit GitHub
-                  </Text>
-                </TouchableOpacity>
-              )}
 
               <TouchableOpacity
                 style={[styles.closeBtn, { backgroundColor: colors.primary }]}
@@ -106,11 +96,11 @@ export default function PublishModal({ state, onClose }: PublishModalProps) {
                 {state.message}
               </Text>
               <TouchableOpacity
-                style={[styles.closeBtn, { backgroundColor: colors.primary }]}
+                style={[styles.closeBtn, { backgroundColor: colors.destructive }]}
                 onPress={onClose}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.closeBtnText, { color: colors.primaryForeground }]}>
+                <Text style={[styles.closeBtnText, { color: '#FFFFFF' }]}>
                   Réessayer
                 </Text>
               </TouchableOpacity>
@@ -125,34 +115,25 @@ export default function PublishModal({ state, onClose }: PublishModalProps) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 48,
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 24,
+    padding: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 16,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.15,
+    shadowRadius: 40,
+    elevation: 24,
   },
   center: {
     alignItems: 'center',
     gap: 16,
-  },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
-    marginTop: 8,
-  },
-  loadingSubText: {
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
   },
   iconCircle: {
     width: 72,
@@ -161,10 +142,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+    textAlign: 'center',
+  },
+  loadingSubText: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   successTitle: {
     fontSize: 20,
     fontWeight: '700',
     fontFamily: 'Inter_700Bold',
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    marginTop: -8,
   },
   urlBox: {
     flexDirection: 'row',
@@ -180,15 +180,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
     flex: 1,
-  },
-  githubLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  githubText: {
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
   },
   errorMsg: {
     fontSize: 14,

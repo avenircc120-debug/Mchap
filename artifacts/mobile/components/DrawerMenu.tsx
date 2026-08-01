@@ -22,6 +22,7 @@ interface DrawerMenuProps {
   visible: boolean;
   onClose: () => void;
   onSelectSection: (section: Section) => void;
+  onNewProject?: () => void;
 }
 
 const SECTION_ITEMS: { section: Section; icon: React.ComponentProps<typeof Feather>['name']; label: string }[] = [
@@ -30,7 +31,7 @@ const SECTION_ITEMS: { section: Section; icon: React.ComponentProps<typeof Feath
   { section: 'domain', icon: 'globe', label: 'Nom de domaine' },
 ];
 
-export default function DrawerMenu({ visible, onClose, onSelectSection }: DrawerMenuProps) {
+export default function DrawerMenu({ visible, onClose, onSelectSection, onNewProject }: DrawerMenuProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_W)).current;
@@ -69,8 +70,8 @@ export default function DrawerMenu({ visible, onClose, onSelectSection }: Drawer
 
   if (!visible) return null;
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const bottomPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = Platform.OS === 'web' ? 0 : insets.top;
+  const bottomPad = Platform.OS === 'web' ? 24 : insets.bottom;
 
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
@@ -90,7 +91,7 @@ export default function DrawerMenu({ visible, onClose, onSelectSection }: Drawer
             width: DRAWER_W,
             backgroundColor: '#FFFFFF',
             transform: [{ translateX }],
-            paddingTop: topPad + 20,
+            paddingTop: topPad + 16,
             paddingBottom: bottomPad + 20,
             borderRightColor: colors.border,
           },
@@ -105,9 +106,18 @@ export default function DrawerMenu({ visible, onClose, onSelectSection }: Drawer
           <Feather name="x" size={18} color={colors.foreground} />
         </TouchableOpacity>
 
-        <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 20 }]} />
+        {/* App title */}
+        <View style={styles.brandRow}>
+          <View style={[styles.brandDot, { backgroundColor: colors.primary }]} />
+          <Text style={[styles.brandName, { color: colors.foreground }]}>Mchap</Text>
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Section nav items */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+          CONFIGURATION
+        </Text>
         <View style={styles.navItems}>
           {SECTION_ITEMS.map((item) => (
             <TouchableOpacity
@@ -132,13 +142,24 @@ export default function DrawerMenu({ visible, onClose, onSelectSection }: Drawer
 
         <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 8 }]} />
 
-        {/* Footer */}
-        <View style={styles.drawerFooter}>
-          <View style={[styles.statusDot, { backgroundColor: colors.primary }]} />
-          <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
-            Connecté à GitHub & Vercel
-          </Text>
-        </View>
+        {/* New project */}
+        {onNewProject && (
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => {
+              onClose();
+              onNewProject();
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.navIcon, { backgroundColor: colors.muted }]}>
+              <Feather name="plus-circle" size={18} color={colors.mutedForeground} />
+            </View>
+            <Text style={[styles.navLabel, { color: colors.mutedForeground }]}>
+              Nouveau projet
+            </Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     </View>
   );
@@ -168,10 +189,39 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'flex-end',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  brandDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  brandName: {
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.3,
   },
   divider: {
     height: 1,
-    marginVertical: 12,
+    marginVertical: 8,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 1.2,
+    marginTop: 12,
+    marginBottom: 4,
+    paddingHorizontal: 4,
   },
   navItems: {
     gap: 2,
@@ -199,20 +249,5 @@ const styles = StyleSheet.create({
   },
   navChevron: {
     opacity: 0.5,
-  },
-  drawerFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 'auto',
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  footerText: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
   },
 });

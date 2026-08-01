@@ -1,7 +1,17 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
+
+// Only import WebView on native platforms to avoid the React Native WebView error on web
+let WebView: React.ComponentType<any> | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    WebView = require('react-native-webview').WebView;
+  } catch {
+    WebView = null;
+  }
+}
 
 interface PreviewWebViewProps {
   videoId: string | null;
@@ -124,6 +134,33 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
     () => buildPreviewHTML(videoId, adsenseId),
     [videoId, adsenseId],
   );
+
+  // On web platform, use a native iframe to avoid react-native-webview errors
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* @ts-expect-error - iframe is valid on web */}
+        <iframe
+          srcDoc={html}
+          style={{
+            border: 'none',
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            flex: 1,
+          }}
+          allow="autoplay; encrypted-media; fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          title="Aperçu du mini-site"
+        />
+      </View>
+    );
+  }
+
+  // Native platforms — use react-native-webview
+  if (!WebView) {
+    return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
