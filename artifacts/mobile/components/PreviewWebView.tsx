@@ -31,13 +31,43 @@ function buildPreviewHTML(videoId: string | null, adsenseId: string): string {
     : `<div class="ad-placeholder"><span>Bannière Google AdSense</span></div>`;
 
   const videoBlock = videoId
-    ? `<iframe
-        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1"
-        allow="autoplay; encrypted-media; fullscreen"
-        allowfullscreen
-        frameborder="0"
-        style="width:100%;height:100%;border:none;"
-      ></iframe>`
+    ? `<div style="position:relative;width:100%;height:100%;">
+        <iframe
+          id="yt-player"
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1&enablejsapi=1"
+          allow="autoplay; encrypted-media; fullscreen"
+          allowfullscreen
+          frameborder="0"
+          style="width:100%;height:100%;border:none;"
+        ></iframe>
+        <button id="unmute-btn" onclick="unmuteVideo()" style="
+          position:absolute;bottom:54px;right:10px;
+          background:rgba(0,0,0,0.72);color:#fff;border:none;border-radius:20px;
+          padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;
+          display:flex;align-items:center;gap:6px;z-index:99;
+          backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+        ">🔇 Son coupé — Appuyez</button>
+        <script>
+          var muted = true;
+          var player;
+          function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+              events: { onReady: function() {} }
+            });
+          }
+          function unmuteVideo() {
+            var btn = document.getElementById('unmute-btn');
+            if (muted) {
+              if (player && player.unMute) { player.unMute(); player.setVolume(100); }
+              btn.textContent = '🔊 Son activé';
+              btn.style.background = 'rgba(5,150,105,0.85)';
+              muted = false;
+              setTimeout(function(){ btn.style.display='none'; }, 2000);
+            }
+          }
+        </script>
+        <script src="https://www.youtube.com/iframe_api"></script>
+      </div>`
     : `<div class="video-placeholder">
         <div class="play-btn">
           <div class="triangle"></div>
