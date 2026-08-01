@@ -75,6 +75,11 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  # Force a single @types/react version across all workspace packages and their
+  # transitive dependencies to prevent "Two different types with this name exist"
+  # TS errors caused by lucide-react, react-day-picker, etc. bundling their own copy.
+  "@types/react": "^19.2.0"
+  "@types/react-dom": "^19.2.0"
   # replit uses linux-x64 only, we can exclude all other platforms
   "esbuild>@esbuild/darwin-arm64": "-"
   "esbuild>@esbuild/darwin-x64": "-"
