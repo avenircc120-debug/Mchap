@@ -139,8 +139,7 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* @ts-expect-error - iframe is valid on web */}
-        <iframe
+          <iframe
           srcDoc={html}
           style={{
             border: 'none',
