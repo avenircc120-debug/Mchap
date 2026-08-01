@@ -96,64 +96,6 @@ export default function PreviewScreen() {
         </View>
       </View>
 
-      {/* Status indicators */}
-      <View style={[styles.statusRow, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-        <StatusBadge
-          icon="youtube"
-          label="Vidéo"
-          active={!!videoId}
-          colors={colors}
-        />
-        <StatusBadge
-          icon="dollar-sign"
-          label="AdSense"
-          active={!!config.adsenseId}
-          colors={colors}
-        />
-        <StatusBadge
-          icon="globe"
-          label="Domaine"
-          active={!!(config.subdomainName || config.customDomain)}
-          colors={colors}
-        />
-      </View>
-    </View>
-  );
-}
-
-function StatusBadge({
-  icon,
-  label,
-  active,
-  colors,
-}: {
-  icon: string;
-  label: string;
-  active: boolean;
-  colors: ReturnType<typeof useColors>;
-}) {
-  return (
-    <View style={styles.badge}>
-      <View
-        style={[
-          styles.badgeIcon,
-          { backgroundColor: active ? colors.secondary : colors.muted },
-        ]}
-      >
-        <Feather
-          name={icon as any}
-          size={14}
-          color={active ? colors.primary : colors.mutedForeground}
-        />
-      </View>
-      <Text
-        style={[
-          styles.badgeLabel,
-          { color: active ? colors.primary : colors.mutedForeground },
-        ]}
-      >
-        {label}
-      </Text>
     </View>
   );
 }
@@ -245,28 +187,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
     opacity: 0.4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-  },
-  badge: {
-    alignItems: 'center',
-    gap: 5,
-  },
-  badgeIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    fontFamily: 'Inter_600SemiBold',
   },
 });
