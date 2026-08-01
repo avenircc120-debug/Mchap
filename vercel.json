@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm run typecheck && pnpm -r --if-present --filter=!@workspace/mobile run build && pnpm --filter=@workspace/mobile exec expo export --platform web",
+  "outputDirectory": "artifacts/mobile/dist",
+  "framework": null
+}
