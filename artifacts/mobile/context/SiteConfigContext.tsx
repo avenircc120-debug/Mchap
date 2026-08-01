@@ -93,16 +93,10 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     (async () => {
       try {
-        const [rawProjects, rawActiveId] = await Promise.all([
-          AsyncStorage.getItem(PROJECTS_KEY),
-          AsyncStorage.getItem(ACTIVE_KEY),
-        ]);
+        const rawProjects = await AsyncStorage.getItem(PROJECTS_KEY);
         const savedProjects: Project[] = rawProjects ? JSON.parse(rawProjects) : [];
         setProjectsState(savedProjects);
-        // Only restore active project if it still exists
-        if (rawActiveId && savedProjects.find((p) => p.id === rawActiveId)) {
-          setActiveProjectId(rawActiveId);
-        }
+
       } catch {}
       setLoaded(true);
     })();
