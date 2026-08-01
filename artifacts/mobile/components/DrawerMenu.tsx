@@ -111,13 +111,6 @@ export default function DrawerMenu({
 
   const mainItems: NavItem[] = [
     {
-      id: 'home',
-      icon: 'grid',
-      label: 'Mes projets',
-      sublabel: 'Voir tous vos mini-sites',
-      onPress: () => { onClose(); onGoHome?.(); },
-    },
-    {
       id: 'new',
       icon: 'plus-circle',
       label: 'Nouveau projet',
