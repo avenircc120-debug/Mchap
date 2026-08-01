@@ -63,9 +63,6 @@ function ProjectListScreen({
     >
       {/* Header brand */}
       <View style={styles.listHeader}>
-        <View style={[styles.brandLogoCircle, { backgroundColor: colors.primary }]}>
-          <Feather name="globe" size={22} color="#FFFFFF" />
-        </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.brandTitle, { color: colors.foreground, fontSize: 22 }]}>Mchap</Text>
           <Text style={[styles.brandTagline, { color: colors.mutedForeground, fontSize: 12, textAlign: 'left' }]}>
@@ -182,9 +179,6 @@ function LandingScreen({
     <View style={[styles.landingRoot, { paddingTop: topPad, paddingBottom: bottomPad }]}>
       {/* Logo / Brand */}
       <View style={styles.landingBrand}>
-        <View style={[styles.brandLogoCircle, { backgroundColor: colors.primary }]}>
-          <Feather name="globe" size={28} color="#FFFFFF" />
-        </View>
         <Text style={[styles.brandTitle, { color: colors.foreground }]}>Mchap</Text>
         <Text style={[styles.brandTagline, { color: colors.mutedForeground }]}>
           Créez votre mini-site en quelques minutes
@@ -955,14 +949,6 @@ const styles = StyleSheet.create({
   landingBrand: {
     alignItems: 'center',
     gap: 10,
-  },
-  brandLogoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
   },
   brandTitle: {
     fontSize: 32,
