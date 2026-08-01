@@ -69,7 +69,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
       {/* Backdrop */}
       <Animated.View
         style={[styles.backdrop, { opacity }]}

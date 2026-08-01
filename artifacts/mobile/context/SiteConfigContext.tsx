@@ -74,8 +74,6 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   const videoId = extractYouTubeId(config.youtubeUrl);
 
-  if (!loaded) return null;
-
   return (
     <SiteConfigContext.Provider value={{ config, setConfig, videoId }}>
       {children}
