@@ -26,6 +26,7 @@ function ProjectListScreen({
   projects,
   onOpen,
   onNew,
+  onDrawerOpen,
   colors,
   topPad,
   bottomPad,
@@ -33,6 +34,7 @@ function ProjectListScreen({
   projects: Project[];
   onOpen: (id: string) => void;
   onNew: () => void;
+  onDrawerOpen: () => void;
   colors: ReturnType<typeof useColors>;
   topPad: number;
   bottomPad: number;
@@ -61,14 +63,16 @@ function ProjectListScreen({
         { paddingTop: topPad, paddingBottom: bottomPad, backgroundColor: colors.background },
       ]}
     >
-      {/* Header brand */}
+      {/* Header */}
       <View style={styles.listHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.brandTitle, { color: colors.foreground, fontSize: 22 }]}>Mchap</Text>
-          <Text style={[styles.brandTagline, { color: colors.mutedForeground, fontSize: 12, textAlign: 'left' }]}>
-            {projects.length} projet{projects.length > 1 ? 's' : ''}
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.hamburgerBtn, { backgroundColor: colors.muted }]}
+          onPress={onDrawerOpen}
+          activeOpacity={0.7}
+        >
+          <Feather name="menu" size={22} color={colors.foreground} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }} />
         <TouchableOpacity
           style={[styles.newBtn, { backgroundColor: colors.primary }]}
           onPress={onNew}
@@ -446,6 +450,7 @@ export default function DashboardScreen() {
             projects={projects}
             onOpen={(id) => loadProject(id)}
             onNew={handleStartCreate}
+            onDrawerOpen={() => setDrawerOpen(true)}
             colors={colors}
             topPad={topPad + 8}
             bottomPad={bottomPad + 16}
@@ -458,6 +463,13 @@ export default function DashboardScreen() {
             bottomPad={bottomPad + 16}
           />
         )}
+        <DrawerMenu
+          visible={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onGoHome={() => { resetProject(); setDrawerOpen(false); }}
+          onNewProject={() => { resetProject(); setDrawerOpen(false); setCreateModalOpen(true); }}
+          onLogout={() => { resetProject(); }}
+        />
         <CreateProjectModal
           visible={createModalOpen}
           onConfirm={handleConfirmCreate}
@@ -842,6 +854,14 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  hamburgerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   newBtn: {
     flexDirection: 'row',
