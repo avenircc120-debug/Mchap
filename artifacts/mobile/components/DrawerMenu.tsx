@@ -138,7 +138,7 @@ export default function DrawerMenu({
       id: 'support',
       icon: 'help-circle',
       label: 'Aide & Support',
-      sublabel: 'Contacter l'assistance',
+      sublabel: "Contacter l'assistance",
       onPress: () => { onClose(); handleContact(); },
     },
   ];
