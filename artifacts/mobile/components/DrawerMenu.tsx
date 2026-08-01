@@ -12,22 +12,25 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 
 const SCREEN_W = Dimensions.get('window').width;
 const DRAWER_W = Math.min(SCREEN_W * 0.75, 300);
 
+type Section = 'youtube' | 'adsense' | 'domain';
+
 interface DrawerMenuProps {
   visible: boolean;
   onClose: () => void;
+  onSelectSection: (section: Section) => void;
 }
 
-const menuItems = [
-  { icon: 'sliders' as const, label: 'Dashboard', route: '/(tabs)/' },
-  { icon: 'eye' as const, label: 'Aperçu 9:16', route: '/(tabs)/preview' },
+const SECTION_ITEMS: { section: Section; icon: React.ComponentProps<typeof Feather>['name']; label: string }[] = [
+  { section: 'youtube', icon: 'youtube', label: 'Lien YouTube' },
+  { section: 'adsense', icon: 'dollar-sign', label: 'Google AdSense' },
+  { section: 'domain', icon: 'globe', label: 'Nom de domaine' },
 ];
 
-export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
+export default function DrawerMenu({ visible, onClose, onSelectSection }: DrawerMenuProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_W)).current;
@@ -67,6 +70,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   if (!visible) return null;
 
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomPad = Platform.OS === 'web' ? 34 : insets.bottom;
 
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
@@ -84,49 +88,51 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           styles.drawer,
           {
             width: DRAWER_W,
-            backgroundColor: colors.background,
+            backgroundColor: '#FFFFFF',
             transform: [{ translateX }],
-            paddingTop: topPad + 16,
+            paddingTop: topPad + 20,
+            paddingBottom: bottomPad + 20,
             borderRightColor: colors.border,
           },
         ]}
       >
-        {/* Header */}
-        <View style={styles.drawerHeader}>
-          <View style={[styles.drawerLogo, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.drawerLogoLetter, { color: colors.primaryForeground }]}>M</Text>
-          </View>
-          <View>
-            <Text style={[styles.drawerTitle, { color: colors.foreground }]}>Mchap Studio</Text>
-            <Text style={[styles.drawerSub, { color: colors.mutedForeground }]}>Mini-site builder</Text>
-          </View>
-        </View>
+        {/* Close button */}
+        <TouchableOpacity
+          style={[styles.closeBtn, { backgroundColor: colors.muted }]}
+          onPress={onClose}
+          activeOpacity={0.7}
+        >
+          <Feather name="x" size={18} color={colors.foreground} />
+        </TouchableOpacity>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 20 }]} />
 
-        {/* Nav items */}
+        {/* Section nav items */}
         <View style={styles.navItems}>
-          {menuItems.map((item) => (
+          {SECTION_ITEMS.map((item) => (
             <TouchableOpacity
-              key={item.route}
-              style={[styles.navItem, { borderRadius: 12 }]}
-              onPress={() => {
-                onClose();
-                router.push(item.route as any);
-              }}
+              key={item.section}
+              style={styles.navItem}
+              onPress={() => onSelectSection(item.section)}
               activeOpacity={0.7}
             >
               <View style={[styles.navIcon, { backgroundColor: colors.secondary }]}>
                 <Feather name={item.icon} size={18} color={colors.primary} />
               </View>
               <Text style={[styles.navLabel, { color: colors.foreground }]}>{item.label}</Text>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.mutedForeground}
+                style={styles.navChevron}
+              />
             </TouchableOpacity>
           ))}
         </View>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 8 }]} />
 
-        {/* Footer info */}
+        {/* Footer */}
         <View style={styles.drawerFooter}>
           <View style={[styles.statusDot, { backgroundColor: colors.primary }]} />
           <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
@@ -141,7 +147,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   drawer: {
     position: 'absolute',
@@ -150,66 +156,49 @@ const styles = StyleSheet.create({
     left: 0,
     borderRightWidth: 1,
     paddingHorizontal: 16,
-    paddingBottom: 32,
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 16,
   },
-  drawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-  },
-  drawerLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  drawerLogoLetter: {
-    fontSize: 22,
-    fontWeight: '800',
-    fontFamily: 'Inter_700Bold',
-  },
-  drawerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
-  },
-  drawerSub: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 1,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  navItems: {
-    gap: 4,
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  navIcon: {
+  closeBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  divider: {
+    height: 1,
+    marginVertical: 12,
+  },
+  navItems: {
+    gap: 2,
+  },
+  navItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  navIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   navLabel: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
+  },
+  navChevron: {
+    opacity: 0.5,
   },
   drawerFooter: {
     flexDirection: 'row',
@@ -218,8 +207,8 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   statusDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
   },
   footerText: {

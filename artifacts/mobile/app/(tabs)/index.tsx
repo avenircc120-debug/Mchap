@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,29 +20,16 @@ import PublishModal, { type PublishState } from '@/components/PublishModal';
 
 type Section = 'youtube' | 'adsense' | 'domain';
 
-const SECTIONS: { key: Section; icon: string; label: string }[] = [
-  { key: 'youtube', icon: 'youtube', label: 'YouTube' },
-  { key: 'adsense', icon: 'dollar-sign', label: 'AdSense' },
-  { key: 'domain', icon: 'globe', label: 'Domaine' },
-];
-
 export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { config, setConfig } = useSiteConfig();
-  const [activeSection, setActiveSection] = useState<Section>('youtube');
+  const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
 
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
   const bottomPad = Platform.OS === 'web' ? 34 : insets.bottom;
-
-  // Completion indicators
-  const done: Record<Section, boolean> = {
-    youtube: !!config.youtubeUrl,
-    adsense: !!config.adsenseId,
-    domain: !!(config.subdomainName || config.customDomain),
-  };
 
   const handlePreview = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -78,24 +64,16 @@ export default function DashboardScreen() {
         url: data.url,
         githubUrl: data.githubCommitUrl ?? null,
       });
-    } catch (err) {
+    } catch {
       setPublishState({ kind: 'error', message: 'Impossible de joindre le serveur.' });
     }
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      {/* ── Header ── */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: topPad + 4,
-            backgroundColor: colors.background,
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
+    <View style={[styles.root, { backgroundColor: '#FFFFFF' }]}>
+
+      {/* ── Header — hamburger only ── */}
+      <View style={[styles.header, { paddingTop: topPad + 4 }]}>
         <TouchableOpacity
           style={[styles.hamburger, { backgroundColor: colors.muted }]}
           onPress={() => setDrawerOpen(true)}
@@ -103,89 +81,44 @@ export default function DashboardScreen() {
         >
           <Feather name="menu" size={20} color={colors.foreground} />
         </TouchableOpacity>
-
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          Mchap Studio
-        </Text>
-
-        <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-          <Text style={[styles.badgeLetter, { color: colors.primaryForeground }]}>M</Text>
-        </View>
       </View>
 
-      {/* ── Section tabs ── */}
-      <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
-        {SECTIONS.map((s) => {
-          const active = activeSection === s.key;
-          return (
-            <TouchableOpacity
-              key={s.key}
-              style={[
-                styles.tab,
-                active && { borderBottomColor: colors.primary, borderBottomWidth: 2.5 },
-              ]}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setActiveSection(s.key);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.tabInner}>
-                <Feather
-                  name={s.icon as any}
-                  size={15}
-                  color={active ? colors.primary : colors.mutedForeground}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    { color: active ? colors.primary : colors.mutedForeground },
-                    active && styles.tabLabelActive,
-                  ]}
-                >
-                  {s.label}
-                </Text>
-                {done[s.key] && (
-                  <View style={[styles.doneDot, { backgroundColor: colors.primary }]} />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* ── Section content ── */}
+      {/* ── Main content — empty until a section is selected ── */}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={topPad + 96}
+        keyboardVerticalOffset={topPad + 60}
       >
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.sectionContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {activeSection === 'youtube' && (
-            <SectionYouTube config={config} setConfig={setConfig} colors={colors} />
-          )}
-          {activeSection === 'adsense' && (
-            <SectionAdSense config={config} setConfig={setConfig} colors={colors} />
-          )}
-          {activeSection === 'domain' && (
-            <SectionDomain config={config} setConfig={setConfig} colors={colors} />
-          )}
-        </ScrollView>
+        {activeSection === null ? (
+          <View style={styles.emptyState} />
+        ) : (
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.sectionContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {activeSection === 'youtube' && (
+              <SectionYouTube config={config} setConfig={setConfig} colors={colors} />
+            )}
+            {activeSection === 'adsense' && (
+              <SectionAdSense config={config} setConfig={setConfig} colors={colors} />
+            )}
+            {activeSection === 'domain' && (
+              <SectionDomain config={config} setConfig={setConfig} colors={colors} />
+            )}
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
 
-      {/* ── Bottom action bar ── */}
+      {/* ── Bottom — Prévisualiser + Publier only ── */}
       <View
         style={[
           styles.bottomBar,
           {
             paddingBottom: bottomPad + 12,
             borderTopColor: colors.border,
-            backgroundColor: colors.background,
+            backgroundColor: '#FFFFFF',
           },
         ]}
       >
@@ -209,7 +142,14 @@ export default function DashboardScreen() {
       </View>
 
       {/* ── Drawer & Modal ── */}
-      <DrawerMenu visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <DrawerMenu
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onSelectSection={(section) => {
+          setActiveSection(section);
+          setDrawerOpen(false);
+        }}
+      />
       <PublishModal
         state={publishState}
         onClose={() => setPublishState({ kind: 'idle' })}
@@ -242,7 +182,7 @@ function SectionYouTube({
         style={[
           styles.input,
           {
-            backgroundColor: colors.background,
+            backgroundColor: '#FFFFFF',
             borderColor: config.youtubeUrl ? colors.primary : colors.input,
             color: colors.foreground,
           },
@@ -290,7 +230,7 @@ function SectionAdSense({
         style={[
           styles.input,
           {
-            backgroundColor: colors.background,
+            backgroundColor: '#FFFFFF',
             borderColor: config.adsenseId ? colors.primary : colors.input,
             color: colors.foreground,
           },
@@ -366,7 +306,7 @@ function SectionDomain({
           ]}
         >
           <TextInput
-            style={[styles.domainInput, { color: colors.foreground, backgroundColor: colors.background }]}
+            style={[styles.domainInput, { color: colors.foreground, backgroundColor: '#FFFFFF' }]}
             placeholder="mon-site"
             placeholderTextColor={colors.mutedForeground}
             value={config.subdomainName}
@@ -391,7 +331,7 @@ function SectionDomain({
           style={[
             styles.input,
             {
-              backgroundColor: colors.background,
+              backgroundColor: '#FFFFFF',
               borderColor: config.customDomain ? colors.primary : colors.input,
               color: colors.foreground,
             },
@@ -414,13 +354,10 @@ function SectionDomain({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
+
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    gap: 12,
+    paddingBottom: 12,
   },
   hamburger: {
     width: 40,
@@ -429,55 +366,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
+
+  emptyState: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
   },
-  badge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeLetter: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: 'Inter_700Bold',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderBottomWidth: 2.5,
-    borderBottomColor: 'transparent',
-  },
-  tabInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  tabLabel: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  tabLabelActive: {
-    fontFamily: 'Inter_600SemiBold',
-  },
-  doneDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginLeft: 2,
-  },
+
   sectionContent: {
     padding: 20,
     paddingBottom: 40,
@@ -573,6 +466,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     fontFamily: 'Inter_400Regular',
   },
+
   bottomBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
