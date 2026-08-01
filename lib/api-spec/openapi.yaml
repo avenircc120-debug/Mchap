@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: publish
+    description: Deploy mini-site to Vercel and push to GitHub
 paths:
   /healthz:
     get:
@@ -24,6 +26,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /publish:
+    post:
+      operationId: publishSite
+      tags: [publish]
+      summary: Deploy mini-site to Vercel and push to GitHub
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "200":
+          description: Site deployed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishResult"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishError"
+        "502":
+          description: Vercel deployment failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +65,41 @@ components:
           type: string
       required:
         - status
-
+    PublishRequest:
+      type: object
+      properties:
+        youtubeUrl:
+          type: string
+        adsenseId:
+          type: string
+        domainType:
+          type: string
+          enum: [subdomain, custom]
+        subdomainName:
+          type: string
+        customDomain:
+          type: string
+      required:
+        - youtubeUrl
+        - adsenseId
+        - domainType
+    PublishResult:
+      type: object
+      properties:
+        url:
+          type: string
+        githubCommitUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+        - url
+        - status
+    PublishError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
