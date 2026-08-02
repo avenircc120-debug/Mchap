@@ -2,9 +2,20 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PROJECTS_KEY = '@mchap_projects_v2';
-const ACTIVE_KEY = '@mchap_active_project_id';
+const ACTIVE_KEY   = '@mchap_active_project_id';
 
 export type DomainType = 'subdomain' | 'custom';
+
+export interface Publication {
+  id: string;
+  videoUrl: string;
+  title: string;
+  description?: string;
+  buyButtonEnabled: boolean;
+  buyButtonUrl?: string;
+  buyButtonText?: string;
+  createdAt: number;
+}
 
 export interface SiteConfig {
   youtubeUrl: string;
@@ -14,6 +25,12 @@ export interface SiteConfig {
   customDomain: string;
   projectName: string;
   projectInitialized: boolean;
+  // Boutique / bouton d'achat
+  shopEnabled: boolean;
+  shopButtonText: string;
+  shopUrl: string;
+  // Publications multiples
+  publications: Publication[];
 }
 
 export interface Project extends SiteConfig {
@@ -29,6 +46,10 @@ const defaultConfig: SiteConfig = {
   customDomain: '',
   projectName: '',
   projectInitialized: false,
+  shopEnabled: false,
+  shopButtonText: 'Voir la boutique',
+  shopUrl: '',
+  publications: [],
 };
 
 interface SiteConfigContextValue {
@@ -36,11 +57,13 @@ interface SiteConfigContextValue {
   setConfig: (partial: Partial<SiteConfig>) => void;
   videoId: string | null;
   resetProject: () => void;
-  // Multi-project
   projects: Project[];
   activeProjectId: string | null;
   createProject: (name: string, subdomain: string) => void;
   loadProject: (id: string) => void;
+  addPublication: (pub: Omit<Publication, 'id' | 'createdAt'>) => void;
+  updatePublication: (id: string, partial: Partial<Publication>) => void;
+  deletePublication: (id: string) => void;
 }
 
 const SiteConfigContext = createContext<SiteConfigContextValue>({
@@ -52,6 +75,9 @@ const SiteConfigContext = createContext<SiteConfigContextValue>({
   activeProjectId: null,
   createProject: () => {},
   loadProject: () => {},
+  addPublication: () => {},
+  updatePublication: () => {},
+  deletePublication: () => {},
 });
 
 export function extractYouTubeId(url: string): string | null {
@@ -78,11 +104,8 @@ async function saveProjects(projects: Project[]) {
 }
 
 async function saveActiveId(id: string | null) {
-  if (id) {
-    await AsyncStorage.setItem(ACTIVE_KEY, id);
-  } else {
-    await AsyncStorage.removeItem(ACTIVE_KEY);
-  }
+  if (id) await AsyncStorage.setItem(ACTIVE_KEY, id);
+  else await AsyncStorage.removeItem(ACTIVE_KEY);
 }
 
 export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
@@ -93,17 +116,17 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     (async () => {
       try {
-        const rawProjects = await AsyncStorage.getItem(PROJECTS_KEY);
-        const savedProjects: Project[] = rawProjects ? JSON.parse(rawProjects) : [];
-        setProjectsState(savedProjects);
-
+        const raw = await AsyncStorage.getItem(PROJECTS_KEY);
+        setProjectsState(raw ? JSON.parse(raw) : []);
       } catch {}
       setLoaded(true);
     })();
   }, []);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
-  const config: SiteConfig = activeProject ?? defaultConfig;
+  const config: SiteConfig = activeProject
+    ? { ...defaultConfig, ...activeProject }
+    : defaultConfig;
 
   const setConfig = (partial: Partial<SiteConfig>) => {
     if (!activeProjectId) return;
@@ -141,9 +164,25 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   };
 
   const resetProject = () => {
-    // Go back to the project list (no active project)
     setActiveProjectId(null);
     saveActiveId(null);
+  };
+
+  const addPublication = (pub: Omit<Publication, 'id' | 'createdAt'>) => {
+    const newPub: Publication = { ...pub, id: generateId(), createdAt: Date.now() };
+    setConfig({ publications: [...(config.publications || []), newPub] });
+  };
+
+  const updatePublication = (id: string, partial: Partial<Publication>) => {
+    setConfig({
+      publications: (config.publications || []).map((p) =>
+        p.id === id ? { ...p, ...partial } : p,
+      ),
+    });
+  };
+
+  const deletePublication = (id: string) => {
+    setConfig({ publications: (config.publications || []).filter((p) => p.id !== id) });
   };
 
   const videoId = extractYouTubeId(config.youtubeUrl);
@@ -152,7 +191,11 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <SiteConfigContext.Provider
-      value={{ config, setConfig, videoId, resetProject, projects, activeProjectId, createProject, loadProject }}
+      value={{
+        config, setConfig, videoId, resetProject,
+        projects, activeProjectId, createProject, loadProject,
+        addPublication, updatePublication, deletePublication,
+      }}
     >
       {children}
     </SiteConfigContext.Provider>
