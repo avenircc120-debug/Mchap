@@ -327,6 +327,55 @@
           background: #e0e0e0;
         }
       }
+
+      /* ── Mchap : video + shop + legal ── */
+      .mchap-video {
+        width: 100%;
+        aspect-ratio: 9/16;
+        max-height: 480px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #000;
+        margin-bottom: 20px;
+        position: relative;
+      }
+      .mchap-video iframe {
+        width: 100%; height: 100%; border: none; display: block;
+      }
+      .mchap-buy {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #FF3C00;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 14px 28px;
+        border-radius: 12px;
+        text-decoration: none;
+        margin-bottom: 28px;
+        transition: opacity 0.15s;
+      }
+      .mchap-buy:hover { opacity: 0.88; }
+      .mchap-legal-footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+      }
+      .mchap-legal-footer a {
+        color: #888;
+        text-decoration: underline;
+        margin: 0 8px;
+      }
+      .mchap-legal-footer a:hover { color: #444; }
+      @media (prefers-color-scheme: dark) {
+        .mchap-legal-footer { border-top-color: #333; }
+        .mchap-legal-footer a { color: #666; }
+        .mchap-legal-footer a:hover { color: #aaa; }
+      }
     </style>
   </head>
   <body>
@@ -337,7 +386,9 @@
       </div>
 
       <div class="content" id="content">
-        <h1>APP_NAME_PLACEHOLDER</h1>
+        VIDEO_SECTION_PLACEHOLDER
+        BUY_SECTION_PLACEHOLDER
+                <h1>APP_NAME_PLACEHOLDER</h1>
         <p class="subtitle">Preview this app on your phone</p>
 
         <div class="steps-container">
@@ -399,6 +450,16 @@
       integrity="sha384-K7D1ZVqZVEPBKpQrjKR0/pDcFaWHQPzUBKNY5k8RRX5aGtd4WGHXEnO0qso4YowQ"
       crossorigin="anonymous"
     ></script>
+    <!-- Legal footer — Mchap -->
+    <div class="mchap-legal-footer">
+      <p>
+        <a href="LEGAL_BASE_PLACEHOLDER/politique-de-confidentialite">Politique de confidentialité</a>
+        <a href="LEGAL_BASE_PLACEHOLDER/cgv">CGV</a>
+        <a href="LEGAL_BASE_PLACEHOLDER/contact">Contact</a>
+      </p>
+      <p style="margin-top:6px;">© APP_NAME_PLACEHOLDER — Propulsé par <a href="https://mchap.app" style="color:#FF3C00">Mchap</a></p>
+    </div>
+
     <script>
       (function () {
         const ua = navigator.userAgent;
