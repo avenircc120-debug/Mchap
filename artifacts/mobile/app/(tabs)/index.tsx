@@ -170,20 +170,32 @@ function ProjectListScreen({
 // ─── Landing Screen ────────────────────────────────────────────────────────
 function LandingScreen({
   onStart,
+  onDrawerOpen,
   colors,
   topPad,
   bottomPad,
 }: {
   onStart: () => void;
+  onDrawerOpen: () => void;
   colors: ReturnType<typeof useColors>;
   topPad: number;
   bottomPad: number;
 }) {
   return (
     <View style={[styles.landingRoot, { paddingTop: topPad, paddingBottom: bottomPad }]}>
-      {/* Logo / Brand */}
+      {/* Hamburger */}
+      <View style={styles.landingTopBar}>
+        <TouchableOpacity
+          style={[styles.hamburgerBtn, { backgroundColor: colors.muted }]}
+          onPress={onDrawerOpen}
+          activeOpacity={0.7}
+        >
+          <Feather name="menu" size={22} color={colors.foreground} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Brand tagline */}
       <View style={styles.landingBrand}>
-        <Text style={[styles.brandTitle, { color: colors.foreground }]}>Mchap</Text>
         <Text style={[styles.brandTagline, { color: colors.mutedForeground }]}>
           Créez votre mini-site en quelques minutes
         </Text>
@@ -458,6 +470,7 @@ export default function DashboardScreen() {
         ) : (
           <LandingScreen
             onStart={handleStartCreate}
+            onDrawerOpen={() => setDrawerOpen(true)}
             colors={colors}
             topPad={topPad + 16}
             bottomPad={bottomPad + 16}
@@ -854,6 +867,11 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  landingTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   hamburgerBtn: {
     width: 40,
