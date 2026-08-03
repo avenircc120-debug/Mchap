@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -11,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useColors } from '@/hooks/useColors';
+import { extractYouTubeId } from '@/context/SiteConfigContext';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -34,12 +36,17 @@ function isValidVideoUrl(url: string): boolean {
   );
 }
 
+function ytThumb(id: string) {
+  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+}
+
 export default function AddVideoModal({ visible, onClose, onConfirm }: AddVideoModalProps) {
   const colors = useColors();
   const [url, setUrl] = useState('');
   const [hasPreview, setHasPreview] = useState(false);
 
   const valid = isValidVideoUrl(url);
+  const youtubeId = extractYouTubeId(url);
 
   const handleValidate = () => {
     if (!valid) return;
@@ -199,19 +206,34 @@ export default function AddVideoModal({ visible, onClose, onConfirm }: AddVideoM
                     Aperçu — vidéo nettoyée
                   </Text>
 
-                  {/* Simulated player */}
+                  {/* Real preview */}
                   <View
                     style={[
                       styles.playerContainer,
-                      { borderColor: colors.border },
+                      { borderColor: colors.border, overflow: 'hidden' },
                     ]}
                   >
-                    {/* Dark screen */}
-                    <View style={styles.playerScreen}>
-                      <View style={styles.playBtnSim}>
-                        <Feather name="play" size={30} color="#FFFFFF" />
+                    {youtubeId ? (
+                      /* YouTube: real thumbnail */
+                      <>
+                        <Image
+                          source={{ uri: ytThumb(youtubeId) }}
+                          style={styles.playerScreen}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.playBtnSim}>
+                          <Feather name="play" size={30} color="#FFFFFF" />
+                        </View>
+                      </>
+                    ) : (
+                      /* Non-YouTube: dark placeholder */
+                      <View style={[styles.playerScreen, { alignItems: 'center', justifyContent: 'center', gap: 8 }]}>
+                        <Feather name="video" size={36} color="rgba(255,255,255,0.6)" />
+                        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', paddingHorizontal: 16 }}>
+                          Aperçu disponible à la lecture
+                        </Text>
                       </View>
-                    </View>
+                    )}
 
                     {/* Clean badge */}
                     <View
@@ -221,43 +243,6 @@ export default function AddVideoModal({ visible, onClose, onConfirm }: AddVideoM
                       <Text style={styles.cleanBadgeText}>
                         Sans logo · Sans filigrane
                       </Text>
-                    </View>
-
-                    {/* Simulated player controls */}
-                    <View
-                      style={[
-                        styles.playerControls,
-                        { backgroundColor: colors.card, borderTopColor: colors.border },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.playerUrl, { color: colors.mutedForeground }]}
-                        numberOfLines={1}
-                      >
-                        {url}
-                      </Text>
-                      <View style={styles.progressBar}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            { backgroundColor: colors.primary },
-                          ]}
-                        />
-                      </View>
-                      <View style={styles.playerBtns}>
-                        <Feather name="rewind" size={14} color={colors.mutedForeground} />
-                        <View
-                          style={[
-                            styles.playMini,
-                            { backgroundColor: colors.primary },
-                          ]}
-                        >
-                          <Feather name="play" size={12} color="#FFFFFF" />
-                        </View>
-                        <Feather name="fast-forward" size={14} color={colors.mutedForeground} />
-                        <Feather name="volume-2" size={14} color={colors.mutedForeground} />
-                        <Feather name="maximize-2" size={14} color={colors.mutedForeground} />
-                      </View>
                     </View>
                   </View>
 
