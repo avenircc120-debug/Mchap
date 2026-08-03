@@ -69,7 +69,7 @@ function CustomTabBar({
           >
             {isIOS && cfg.sfSymbol ? (
               <SymbolView
-                name={isFocused ? `${cfg.sfSymbol}.fill` : cfg.sfSymbol}
+                name={(isFocused ? `${cfg.sfSymbol}.fill` : cfg.sfSymbol) as any}
                 tintColor={isFocused ? colors.primary : colors.mutedForeground}
                 size={24}
               />
@@ -114,7 +114,7 @@ function CustomTabBar({
           >
             {isIOS && cfg.sfSymbol ? (
               <SymbolView
-                name={isFocused ? `${cfg.sfSymbol}.fill` : cfg.sfSymbol}
+                name={(isFocused ? `${cfg.sfSymbol}.fill` : cfg.sfSymbol) as any}
                 tintColor={isFocused ? colors.primary : colors.mutedForeground}
                 size={24}
               />
@@ -184,7 +184,7 @@ export default function TabLayout() {
     <>
       <Tabs
         tabBar={(props) => (
-          <CustomTabBar {...props} onAddPress={handleAddPress} />
+          <CustomTabBar {...(props as any)} onAddPress={handleAddPress} />
         )}
         screenOptions={{ headerShown: false }}
       >
