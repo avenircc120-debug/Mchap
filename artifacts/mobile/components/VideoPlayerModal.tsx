@@ -82,8 +82,26 @@ function buildPlayerHTML(videoId: string): string {
 </html>`;
 }
 
+function buildDirectHTML(url: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <iframe src="${url}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+</body>
+</html>`;
+}
+
 interface VideoPlayerModalProps {
-  videoId: string | null;
+  videoId?: string | null;
+  videoUrl?: string | null;
   title?: string;
   visible: boolean;
   onClose: () => void;
@@ -91,6 +109,7 @@ interface VideoPlayerModalProps {
 
 export default function VideoPlayerModal({
   videoId,
+  videoUrl,
   title,
   visible,
   onClose,
@@ -99,8 +118,12 @@ export default function VideoPlayerModal({
   const insets = useSafeAreaInsets();
 
   const html = useMemo(
-    () => (videoId ? buildPlayerHTML(videoId) : ''),
-    [videoId],
+    () => {
+      if (videoId) return buildPlayerHTML(videoId);
+      if (videoUrl) return buildDirectHTML(videoUrl);
+      return '';
+    },
+    [videoId, videoUrl],
   );
 
   const handleClose = () => {
