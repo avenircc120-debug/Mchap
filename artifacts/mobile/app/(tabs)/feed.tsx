@@ -171,7 +171,7 @@ export default function FeedScreen() {
         {/* Share uses native Share sheet — no external browser redirect */}
         <TouchableOpacity
           style={styles.actionItem}
-          onPress={() => handleShare(item.videoId, item.title)}
+          onPress={() => item.videoId && handleShare(item.videoId, item.title)}
           activeOpacity={0.7}
         >
           <Feather name="share-2" size={26} color="#fff" />
