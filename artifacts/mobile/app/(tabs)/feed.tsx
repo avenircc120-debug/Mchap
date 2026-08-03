@@ -25,7 +25,8 @@ function ytThumb(vid: string) {
 
 type FeedEntry = {
   id: string;
-  videoId: string;
+  videoId: string | null;   // null for non-YouTube
+  rawUrl: string;            // always the original URL
   title: string;
   description?: string;
   buyEnabled: boolean;
@@ -43,16 +44,19 @@ export default function FeedScreen() {
 
   // ── In-app player state ───────────────────────────────────────────────────
   const [playerVideoId, setPlayerVideoId] = useState<string | null>(null);
+  const [playerVideoUrl, setPlayerVideoUrl] = useState<string | null>(null);
   const [playerTitle, setPlayerTitle] = useState<string>('');
 
-  const openPlayer = (vid: string, title: string) => {
+  const openPlayer = (entry: FeedEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setPlayerVideoId(vid);
-    setPlayerTitle(title);
+    setPlayerVideoId(entry.videoId);
+    setPlayerVideoUrl(entry.rawUrl);
+    setPlayerTitle(entry.title);
   };
 
   const closePlayer = () => {
     setPlayerVideoId(null);
+    setPlayerVideoUrl(null);
     setPlayerTitle('');
   };
 
@@ -84,6 +88,7 @@ export default function FeedScreen() {
     entries.push({
       id: '__main__',
       videoId,
+      rawUrl: config.youtubeUrl,
       title: config.projectName || 'Ma vidéo',
       description: '',
       buyEnabled: config.shopEnabled,
@@ -93,10 +98,11 @@ export default function FeedScreen() {
   }
   for (const pub of config.publications || []) {
     const vid = extractYouTubeId(pub.videoUrl);
-    if (vid && vid !== videoId) {
+    if (pub.videoUrl && pub.videoUrl !== config.youtubeUrl) {
       entries.push({
         id: pub.id,
         videoId: vid,
+        rawUrl: pub.videoUrl,
         title: pub.title || config.projectName || '',
         description: pub.description,
         buyEnabled: pub.buyButtonEnabled,
@@ -109,18 +115,24 @@ export default function FeedScreen() {
   const renderItem = ({ item }: { item: FeedEntry }) => (
     <View style={[styles.item, { height: ITEM_H }]}>
       {/* Thumbnail */}
-      <Image
-        source={{ uri: ytThumb(item.videoId) }}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
+      {item.videoId ? (
+        <Image
+          source={{ uri: ytThumb(item.videoId) }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' }]}>
+          <Feather name="video" size={52} color="rgba(255,255,255,0.2)" />
+        </View>
+      )}
       {/* Dark gradient overlay */}
       <View style={styles.gradient} />
 
       {/* Centre — play button: opens IN-APP player, never redirects */}
       <TouchableOpacity
         style={styles.playZone}
-        onPress={() => openPlayer(item.videoId, item.title)}
+        onPress={() => openPlayer(item)}
         activeOpacity={0.85}
       >
         <View style={styles.playCircle}>
@@ -137,7 +149,7 @@ export default function FeedScreen() {
         {item.buyEnabled && !!item.buyUrl && (
           <TouchableOpacity
             style={styles.buyBtn}
-            onPress={() => openPlayer(item.videoId, item.title)}
+            onPress={() => openPlayer(item)}
             activeOpacity={0.85}
           >
             <Feather name="shopping-bag" size={16} color="#fff" />
@@ -201,8 +213,9 @@ export default function FeedScreen() {
       {/* In-app video player — strictly isolated, no external redirects */}
       <VideoPlayerModal
         videoId={playerVideoId}
+        videoUrl={playerVideoUrl}
         title={playerTitle}
-        visible={!!playerVideoId}
+        visible={!!(playerVideoId || playerVideoUrl)}
         onClose={closePlayer}
       />
     </View>
