@@ -7,16 +7,28 @@ import { Tabs } from 'expo-router';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
 import AddVideoModal from '@/components/AddVideoModal';
+
+// Minimal inline type — avoids importing @react-navigation/bottom-tabs directly
+interface TabBarProps {
+  state: {
+    routes: Array<{ key: string; name: string }>;
+    index: number;
+  };
+  navigation: {
+    emit: (args: { type: string; target: string; canPreventDefault?: boolean }) => { defaultPrevented: boolean };
+    navigate: (name: string) => void;
+  };
+  descriptors: Record<string, unknown>;
+}
 
 // ─── Custom Tab Bar (Classic / Android / Web) ───────────────────────────────
 function CustomTabBar({
   state,
   navigation,
   onAddPress,
-}: BottomTabBarProps & { onAddPress: () => void }) {
+}: TabBarProps & { onAddPress: () => void }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isIOS = Platform.OS === 'ios';
