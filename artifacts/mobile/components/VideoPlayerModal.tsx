@@ -73,28 +73,11 @@ function buildPlayerHTML(videoId: string): string {
 </head>
 <body>
   <iframe
-    src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&playsinline=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3"
-    allow="autoplay; encrypted-media; fullscreen"
+    src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&playsinline=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1"
+    allow="autoplay; encrypted-media; fullscreen; accelerometer; gyroscope"
     allowfullscreen
     frameborder="0"
   ></iframe>
-</body>
-</html>`;
-}
-
-function buildDirectHTML(url: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-    iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-<body>
-  <iframe src="${url}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
 </body>
 </html>`;
 }
@@ -118,12 +101,8 @@ export default function VideoPlayerModal({
   const insets = useSafeAreaInsets();
 
   const html = useMemo(
-    () => {
-      if (videoId) return buildPlayerHTML(videoId);
-      if (videoUrl) return buildDirectHTML(videoUrl);
-      return '';
-    },
-    [videoId, videoUrl],
+    () => (videoId ? buildPlayerHTML(videoId) : ''),
+    [videoId],
   );
 
   const handleClose = () => {
@@ -134,13 +113,23 @@ export default function VideoPlayerModal({
   // ── Web fallback (iframe with strict sandbox — no popups, no top-nav) ──────
   const WebContent = () => {
     if (Platform.OS === 'web') {
+      if (videoId) {
+        return (
+          <iframe
+            srcDoc={html}
+            style={{ border: 'none', width: '100%', height: '100%', display: 'block' }}
+            allow="autoplay; encrypted-media; fullscreen"
+            sandbox="allow-scripts allow-same-origin"
+            title="Lecteur vidéo"
+          />
+        );
+      }
       return (
         <iframe
-          srcDoc={html}
+          src={videoUrl ?? ''}
           style={{ border: 'none', width: '100%', height: '100%', display: 'block' }}
           allow="autoplay; encrypted-media; fullscreen"
-          // no allow-popups, no allow-top-navigation → links cannot escape
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts allow-same-origin allow-popups"
           title="Lecteur vidéo"
         />
       );
@@ -148,9 +137,10 @@ export default function VideoPlayerModal({
 
     if (!WebView) return null;
 
+    const source = videoId ? { html } : { uri: videoUrl ?? '' };
     return (
       <WebView
-        source={{ html }}
+        source={source}
         style={styles.webview}
         // ── Playback ──────────────────────────────────────────────────────────
         allowsInlineMediaPlayback
@@ -159,9 +149,7 @@ export default function VideoPlayerModal({
         javaScriptEnabled
         domStorageEnabled
         // ── Anti-redirect: native layer ───────────────────────────────────────
-        // Block any top-frame navigation that is not our initial blank load
         onShouldStartLoadWithRequest={(req: { url: string; [key: string]: unknown }) => {
-          // Allow initial blank page load and blob/data URIs
           if (
             req.url === 'about:blank' ||
             req.url.startsWith('blob:') ||
@@ -169,16 +157,11 @@ export default function VideoPlayerModal({
           ) {
             return true;
           }
-          // Allow only if NOT a top-frame navigation
-          // (YouTube embed does sub-frame navigations — those are fine)
           if (req.isTopFrame) return false;
           return true;
         }}
-        // Block new windows on Android (target="_blank" etc.)
         setSupportMultipleWindows={false}
-        // ── Anti-redirect: JS layer ───────────────────────────────────────────
         injectedJavaScript={ANTI_REDIRECT_JS}
-        // General
         scrollEnabled={false}
         originWhitelist={['*']}
         mixedContentMode="always"
