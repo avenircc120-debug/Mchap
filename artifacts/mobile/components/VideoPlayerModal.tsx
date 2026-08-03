@@ -137,7 +137,7 @@ export default function VideoPlayerModal({
         domStorageEnabled
         // ── Anti-redirect: native layer ───────────────────────────────────────
         // Block any top-frame navigation that is not our initial blank load
-        onShouldStartLoadWithRequest={(req) => {
+        onShouldStartLoadWithRequest={(req: { url: string; [key: string]: unknown }) => {
           // Allow initial blank page load and blob/data URIs
           if (
             req.url === 'about:blank' ||
@@ -241,7 +241,6 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backdropFilter: 'blur(8px)',
   },
   titleBar: {
     position: 'absolute',
