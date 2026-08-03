@@ -9,6 +9,7 @@ import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AddVideoModal from '@/components/AddVideoModal';
+import { useSiteConfig } from '@/context/SiteConfigContext';
 
 // Minimal inline type — avoids importing @react-navigation/bottom-tabs directly
 interface TabBarProps {
@@ -167,15 +168,19 @@ function NativeTabLayoutWithModal({ onAddPress }: { onAddPress: () => void }) {
 // ─── Root Tab Layout ─────────────────────────────────────────────────────────
 export default function TabLayout() {
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const { addPublication } = useSiteConfig();
 
   const handleAddPress = () => setAddModalVisible(true);
   const handleAddClose = () => setAddModalVisible(false);
+  const handleAddConfirm = (url: string) => {
+    addPublication({ videoUrl: url, title: '', buyButtonEnabled: false });
+  };
 
   if (isLiquidGlassAvailable()) {
     return (
       <>
         <NativeTabLayoutWithModal onAddPress={handleAddPress} />
-        <AddVideoModal visible={addModalVisible} onClose={handleAddClose} />
+        <AddVideoModal visible={addModalVisible} onClose={handleAddClose} onConfirm={handleAddConfirm} />
       </>
     );
   }
@@ -197,7 +202,7 @@ export default function TabLayout() {
         <Tabs.Screen name="preview" options={{ href: null }} />
       </Tabs>
 
-      <AddVideoModal visible={addModalVisible} onClose={handleAddClose} />
+      <AddVideoModal visible={addModalVisible} onClose={handleAddClose} onConfirm={handleAddConfirm} />
     </>
   );
 }
