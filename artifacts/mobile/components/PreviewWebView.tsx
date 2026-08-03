@@ -241,7 +241,7 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
         originWhitelist={['*']}
         mixedContentMode="always"
         // ── Anti-redirect: block top-frame navigations ─────────────────────────
-        onShouldStartLoadWithRequest={(req) => {
+        onShouldStartLoadWithRequest={(req: { url: string; [key: string]: unknown }) => {
           // Allow initial blank load and data/blob URIs
           if (
             req.url === 'about:blank' ||
