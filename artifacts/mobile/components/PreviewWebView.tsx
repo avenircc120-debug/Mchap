@@ -13,6 +13,38 @@ if (Platform.OS !== 'web') {
   }
 }
 
+// ── JS injected to block every external navigation inside the preview ─────────
+const ANTI_REDIRECT_JS = `
+(function() {
+  // Block all <a> clicks
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    while (el && el.tagName !== 'A') el = el.parentElement;
+    if (el && el.tagName === 'A') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  // Disable window.open (popups / new tabs)
+  window.open = function() { return null; };
+
+  // Prevent location.href assignments
+  try {
+    var _desc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+    if (_desc && _desc.set) {
+      Object.defineProperty(window.location, 'href', {
+        set: function() { /* blocked */ },
+        get: _desc.get ? _desc.get.bind(window.location) : function() { return ''; },
+        configurable: true,
+      });
+    }
+  } catch(_) {}
+
+  true;
+})();
+`;
+
 interface PreviewWebViewProps {
   videoId: string | null;
   adsenseId: string;
@@ -82,6 +114,8 @@ function buildPreviewHTML(videoId: string | null, adsenseId: string): string {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, Arial, sans-serif; }
+    /* Block pointer events on any anchor in the page to prevent accidental taps */
+    a { pointer-events: none !important; cursor: default !important; }
     .adsense-bar {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -165,11 +199,11 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
     [videoId, adsenseId],
   );
 
-  // On web platform, use a native iframe to avoid react-native-webview errors
+  // ── Web platform: strict sandbox — no popups, no top-navigation ────────────
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-          <iframe
+        <iframe
           srcDoc={html}
           style={{
             border: 'none',
@@ -179,14 +213,16 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
             flex: 1,
           }}
           allow="autoplay; encrypted-media; fullscreen"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          // Removed: allow-popups, allow-top-navigation, allow-forms
+          // Only scripts + same-origin so YouTube embed works; nothing can open external URLs
+          sandbox="allow-scripts allow-same-origin"
           title="Aperçu du mini-site"
         />
       </View>
     );
   }
 
-  // Native platforms — use react-native-webview
+  // ── Native platforms: react-native-webview with anti-redirect guards ────────
   if (!WebView) {
     return <View style={[styles.container, { backgroundColor: '#000' }]} />;
   }
@@ -204,6 +240,25 @@ export default function PreviewWebView({ videoId, adsenseId }: PreviewWebViewPro
         scrollEnabled={false}
         originWhitelist={['*']}
         mixedContentMode="always"
+        // ── Anti-redirect: block top-frame navigations ─────────────────────────
+        onShouldStartLoadWithRequest={(req) => {
+          // Allow initial blank load and data/blob URIs
+          if (
+            req.url === 'about:blank' ||
+            req.url.startsWith('blob:') ||
+            req.url.startsWith('data:')
+          ) {
+            return true;
+          }
+          // Block any top-frame navigation attempt (link clicks, location.href, etc.)
+          if (req.isTopFrame) return false;
+          // Allow sub-frame navigations (YouTube embed internal requests)
+          return true;
+        }}
+        // Block target="_blank" and window.open on Android
+        setSupportMultipleWindows={false}
+        // ── Anti-redirect: JS layer ─────────────────────────────────────────────
+        injectedJavaScript={ANTI_REDIRECT_JS}
       />
     </View>
   );

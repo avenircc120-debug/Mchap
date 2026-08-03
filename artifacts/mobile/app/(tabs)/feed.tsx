@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions,
   FlatList,
   Image,
-  Linking,
   Platform,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useSiteConfig, extractYouTubeId } from '@/context/SiteConfigContext';
 import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import VideoPlayerModal from '@/components/VideoPlayerModal';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -32,12 +34,44 @@ type FeedEntry = {
 };
 
 export default function FeedScreen() {
-  const colors  = useColors();
-  const insets  = useSafeAreaInsets();
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { config, videoId, activeProjectId } = useSiteConfig();
   const topPad    = Platform.OS === 'web' ? 67 : insets.top;
   const bottomPad = Platform.OS === 'web' ? 34 : insets.bottom;
   const ITEM_H    = H;
+
+  // ── In-app player state ───────────────────────────────────────────────────
+  const [playerVideoId, setPlayerVideoId] = useState<string | null>(null);
+  const [playerTitle, setPlayerTitle] = useState<string>('');
+
+  const openPlayer = (vid: string, title: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPlayerVideoId(vid);
+    setPlayerTitle(title);
+  };
+
+  const closePlayer = () => {
+    setPlayerVideoId(null);
+    setPlayerTitle('');
+  };
+
+  // ── Share (uses native share sheet — never opens YouTube directly) ────────
+  const handleShare = async (vid: string, title: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Share.share({
+        title,
+        // Share the mchap.app link if available, otherwise the YouTube URL
+        url: config.subdomainName
+          ? `https://${config.subdomainName}.mchap.app`
+          : `https://www.youtube.com/watch?v=${vid}`,
+        message: title,
+      });
+    } catch {
+      // user dismissed — no action needed
+    }
+  };
 
   const shopUrl =
     config.shopUrl ||
@@ -72,66 +106,68 @@ export default function FeedScreen() {
     }
   }
 
-  const renderItem = ({ item }: { item: FeedEntry }) => {
-    const url = `https://www.youtube.com/watch?v=${item.videoId}`;
-    return (
-      <View style={[styles.item, { height: ITEM_H }]}>
-        {/* Thumbnail */}
-        <Image
-          source={{ uri: ytThumb(item.videoId) }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
-        {/* Dark gradient */}
-        <View style={styles.gradient} />
+  const renderItem = ({ item }: { item: FeedEntry }) => (
+    <View style={[styles.item, { height: ITEM_H }]}>
+      {/* Thumbnail */}
+      <Image
+        source={{ uri: ytThumb(item.videoId) }}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      {/* Dark gradient overlay */}
+      <View style={styles.gradient} />
 
-        {/* Centre — play button */}
-        <TouchableOpacity
-          style={styles.playZone}
-          onPress={() => Linking.openURL(url)}
-          activeOpacity={0.85}
-        >
-          <View style={styles.playCircle}>
-            <Feather name="play" size={34} color="#fff" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Bottom — title + buy button */}
-        <View style={[styles.bottom, { paddingBottom: bottomPad + 72 }]}>
-          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-          {!!item.description && (
-            <Text style={styles.desc} numberOfLines={3}>{item.description}</Text>
-          )}
-          {item.buyEnabled && !!item.buyUrl && (
-            <TouchableOpacity
-              style={styles.buyBtn}
-              onPress={() => Linking.openURL(item.buyUrl)}
-              activeOpacity={0.85}
-            >
-              <Feather name="shopping-bag" size={16} color="#fff" />
-              <Text style={styles.buyLabel}>{item.buyText}</Text>
-            </TouchableOpacity>
-          )}
+      {/* Centre — play button: opens IN-APP player, never redirects */}
+      <TouchableOpacity
+        style={styles.playZone}
+        onPress={() => openPlayer(item.videoId, item.title)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.playCircle}>
+          <Feather name="play" size={34} color="#fff" />
         </View>
+      </TouchableOpacity>
 
-        {/* Right — actions */}
-        <View style={[styles.actions, { top: topPad + 56 }]}>
-          <View style={styles.actionItem}>
-            <Feather name="heart" size={28} color="#fff" />
-            <Text style={styles.actionLabel}>0</Text>
-          </View>
-          <View style={styles.actionItem}>
-            <Feather name="message-circle" size={28} color="#fff" />
-            <Text style={styles.actionLabel}>0</Text>
-          </View>
-          <TouchableOpacity style={styles.actionItem} onPress={() => Linking.openURL(url)} activeOpacity={0.7}>
-            <Feather name="share-2" size={26} color="#fff" />
-            <Text style={styles.actionLabel}>Partager</Text>
+      {/* Bottom — title + description + buy button */}
+      <View style={[styles.bottom, { paddingBottom: bottomPad + 72 }]}>
+        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+        {!!item.description && (
+          <Text style={styles.desc} numberOfLines={3}>{item.description}</Text>
+        )}
+        {item.buyEnabled && !!item.buyUrl && (
+          <TouchableOpacity
+            style={styles.buyBtn}
+            onPress={() => openPlayer(item.videoId, item.title)}
+            activeOpacity={0.85}
+          >
+            <Feather name="shopping-bag" size={16} color="#fff" />
+            <Text style={styles.buyLabel}>{item.buyText}</Text>
           </TouchableOpacity>
-        </View>
+        )}
       </View>
-    );
-  };
+
+      {/* Right — action buttons */}
+      <View style={[styles.actions, { top: topPad + 56 }]}>
+        <View style={styles.actionItem}>
+          <Feather name="heart" size={28} color="#fff" />
+          <Text style={styles.actionLabel}>0</Text>
+        </View>
+        <View style={styles.actionItem}>
+          <Feather name="message-circle" size={28} color="#fff" />
+          <Text style={styles.actionLabel}>0</Text>
+        </View>
+        {/* Share uses native Share sheet — no external browser redirect */}
+        <TouchableOpacity
+          style={styles.actionItem}
+          onPress={() => handleShare(item.videoId, item.title)}
+          activeOpacity={0.7}
+        >
+          <Feather name="share-2" size={26} color="#fff" />
+          <Text style={styles.actionLabel}>Partager</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   if (!activeProjectId || entries.length === 0) {
     const msg = !activeProjectId
@@ -160,6 +196,14 @@ export default function FeedScreen() {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         getItemLayout={(_, i) => ({ length: ITEM_H, offset: ITEM_H * i, index: i })}
+      />
+
+      {/* In-app video player — strictly isolated, no external redirects */}
+      <VideoPlayerModal
+        videoId={playerVideoId}
+        title={playerTitle}
+        visible={!!playerVideoId}
+        onClose={closePlayer}
       />
     </View>
   );
